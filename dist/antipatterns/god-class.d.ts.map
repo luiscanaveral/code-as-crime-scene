@@ -1,0 +1,1 @@
+{"version":3,"file":"god-class.d.ts","sourceRoot":"","sources":["../../src/antipatterns/god-class.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,MAAM,EAAE,MAAM,aAAa,CAAC;AAErC,OAAO,EAAE,iBAAiB,EAAE,MAAM,aAAa,CAAC;AAEhD,wBAAgB,cAAc,CAAC,OAAO,EAAE,MAAM,EAAE,GAAG,iBAAiB,CAqDnE"}

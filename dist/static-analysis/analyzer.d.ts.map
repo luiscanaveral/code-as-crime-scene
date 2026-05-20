@@ -1,0 +1,1 @@
+{"version":3,"file":"analyzer.d.ts","sourceRoot":"","sources":["../../src/static-analysis/analyzer.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,MAAM,EAAE,oBAAoB,EAAE,aAAa,EAAY,MAAM,aAAa,CAAC;AA8DpF,wBAAgB,kBAAkB,CAAC,QAAQ,EAAE,MAAM,EAAE,QAAQ,EAAE,MAAM,GAAG,aAAa,EAAE,CAyBtF;AAED,wBAAgB,iBAAiB,CAAC,OAAO,EAAE,MAAM,EAAE,EAAE,QAAQ,GAAE,MAAsB,GAAG,oBAAoB,EAAE,CAuB7G"}

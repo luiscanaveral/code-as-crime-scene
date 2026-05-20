@@ -1,0 +1,42 @@
+{
+  "name": "code-as-crime-scene",
+  "version": "0.1.0",
+  "description": "Analyzes git history to detect code anti-patterns, run static analysis, find typos, and generate a markdown report",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "code-as-crime-scene": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "start": "node dist/cli.js"
+  },
+  "keywords": [
+    "git",
+    "analysis",
+    "anti-patterns",
+    "static-analysis",
+    "code-quality",
+    "forensic"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "commander": "^13.0.0"
+  }
+}
