@@ -1328,6 +1328,8 @@ const COMMON_TYPOS: [string, string][] = [
   ['asthetic', 'aesthetic'],
 ];
 
+const EXCLUDED_DIRS = ['node_modules', 'dist', '.git', '.next', 'build', '.venv', 'venv', '__pycache__', '.tox'];
+
 export function detectTypos(commits: Commit[], repoPath: string = process.cwd()): TypoResult[] {
   const results: TypoResult[] = [];
   const analyzedFiles = new Set<string>();
@@ -1340,6 +1342,7 @@ export function detectTypos(commits: Commit[], repoPath: string = process.cwd())
   for (const commit of commits) {
     for (const file of commit.files) {
       if (analyzedFiles.has(file.path)) continue;
+      if (EXCLUDED_DIRS.some(dir => file.path.startsWith(`${dir}/`) || file.path.includes(`/${dir}/`))) continue;
       analyzedFiles.add(file.path);
 
       const ext = '.' + (file.path.split('.').pop() || '');

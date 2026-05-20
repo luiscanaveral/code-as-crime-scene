@@ -2,6 +2,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { Commit, StaticAnalysisResult, AnalysisIssue, Severity } from '../types.js';
 import { detectLanguage } from '../analytics/stats.js';
 
+const EXCLUDED_DIRS = ['node_modules', 'dist', '.git', '.next', 'build', '.venv', 'venv', '__pycache__', '.tox'];
+
 interface LanguageRule {
   type: string;
   pattern: RegExp;
@@ -95,6 +97,7 @@ export function runStaticAnalysis(commits: Commit[], repoPath: string = process.
   for (const commit of commits) {
     for (const file of commit.files) {
       if (analyzedFiles.has(file.path)) continue;
+      if (EXCLUDED_DIRS.some(dir => file.path.startsWith(`${dir}/`) || file.path.includes(`/${dir}/`))) continue;
       analyzedFiles.add(file.path);
 
       const fullPath = `${repoPath}/${file.path}`;

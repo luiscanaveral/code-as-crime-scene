@@ -10,7 +10,7 @@ export async function analyze(options: Options = {}): Promise<Report> {
   const { commits, branch, repoUrl } = readGitLog(options);
   const repoPath = options.repoPath || process.cwd();
 
-  const stats = computeStats(commits);
+  const stats = computeStats(commits, repoPath);
   const antipatterns = detectAntiPatterns(commits);
   const staticAnalysis = runStaticAnalysis(commits, repoPath);
   const typos = detectTypos(commits, repoPath);

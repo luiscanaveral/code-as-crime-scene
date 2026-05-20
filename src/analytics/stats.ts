@@ -1,3 +1,4 @@
+import { readFileSync, existsSync } from 'node:fs';
 import { Commit, FileMetrics, StatsResult } from '../types.js';
 
 const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
@@ -5,6 +6,10 @@ const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
   tsx: 'TypeScript React',
   js: 'JavaScript',
   jsx: 'JavaScript React',
+  mjs: 'JavaScript',
+  cjs: 'JavaScript',
+  mts: 'TypeScript',
+  cts: 'TypeScript',
   py: 'Python',
   java: 'Java',
   cs: 'C#',
@@ -37,7 +42,6 @@ const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
   sh: 'Shell',
   bash: 'Shell',
   zsh: 'Shell',
-  dockerfile: 'Docker',
   tf: 'Terraform',
   vue: 'Vue',
   svelte: 'Svelte',
@@ -46,6 +50,16 @@ const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
   r: 'R',
   pl: 'Perl',
   pm: 'Perl',
+  gradle: 'Gradle',
+  kts: 'Kotlin Script',
+  proto: 'Protobuf',
+  graphql: 'GraphQL',
+  gql: 'GraphQL',
+  prisma: 'Prisma',
+  toml: 'TOML',
+  ini: 'INI',
+  cfg: 'Config',
+  env: 'Env',
 };
 
 export function detectLanguage(filePath: string): string {
@@ -55,8 +69,8 @@ export function detectLanguage(filePath: string): string {
   return EXTENSION_LANGUAGE_MAP[ext] || ext.toUpperCase() || 'Unknown';
 }
 
-export function computeStats(commits: Commit[]): StatsResult {
-  const fileMetrics = getFileMetrics(commits);
+export function computeStats(commits: Commit[], repoPath: string = process.cwd()): StatsResult {
+  const fileMetrics = getFileMetrics(commits, repoPath);
   const totalFiles = fileMetrics.size;
   const totalLines = Array.from(fileMetrics.values()).reduce((sum, f) => sum + f.linesOfCode, 0);
   const totalCommits = commits.length;
@@ -102,12 +116,21 @@ export function computeStats(commits: Commit[]): StatsResult {
   };
 }
 
-export function getFileMetrics(commits: Commit[]): Map<string, FileMetrics> {
+export function getFileMetrics(commits: Commit[], repoPath: string = process.cwd()): Map<string, FileMetrics> {
   const fileMap = new Map<string, FileMetrics>();
 
   for (const commit of commits) {
     for (const file of commit.files) {
       if (!fileMap.has(file.path)) {
+        const fullPath = `${repoPath}/${file.path}`;
+        let linesOfCode = 0;
+        try {
+          const content = readFileSync(fullPath, 'utf-8');
+          linesOfCode = content.split('\n').length;
+        } catch {
+          linesOfCode = file.insertions;
+        }
+
         fileMap.set(file.path, {
           path: file.path,
           totalCommits: 0,
@@ -116,7 +139,7 @@ export function getFileMetrics(commits: Commit[]): Map<string, FileMetrics> {
           deletions: 0,
           churn: 0,
           commitMessages: [],
-          linesOfCode: 0,
+          linesOfCode,
           language: detectLanguage(file.path),
         });
       }
