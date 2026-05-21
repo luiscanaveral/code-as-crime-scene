@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { generateReport } from './index.js';
+import { analyze, generateMarkdownReport } from './index.js';
 import { writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, extname, dirname, basename, join } from 'node:path';
 
 const program = new Command();
 
@@ -18,6 +18,7 @@ program
   .option('-s, --since <date>', 'Analyze commits since date (e.g. "2024-01-01")')
   .option('-u, --until <date>', 'Analyze commits until date')
   .option('-l, --language <language>', 'Filter analysis to specific language')
+  .option('-d, --dot-output <path>', 'Output path for Graphviz DOT dependency graph (defaults to output path with .dot extension)')
   .option('-v, --verbose', 'Enable verbose output')
   .action(async (options) => {
     try {
@@ -28,7 +29,7 @@ program
         if (options.until) console.log(`Until: ${options.until}`);
       }
 
-      const report = await generateReport({
+      const report = await analyze({
         repoPath: resolve(options.path),
         maxCommits: options.maxCommits,
         since: options.since,
@@ -37,10 +38,17 @@ program
         verbose: options.verbose,
       });
 
-      const outputPath = resolve(options.output);
-      writeFileSync(outputPath, report, 'utf-8');
+      const markdown = generateMarkdownReport(report);
 
+      const outputPath = resolve(options.output);
+      writeFileSync(outputPath, markdown, 'utf-8');
       console.log(`Report generated: ${outputPath}`);
+
+      const dotPath = options.dotOutput
+        ? resolve(options.dotOutput)
+        : join(dirname(outputPath), basename(outputPath, extname(outputPath)) + '.dot');
+      writeFileSync(dotPath, report.codeViz.dotGraph, 'utf-8');
+      console.log(`Dependency graph generated: ${dotPath}`);
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
       process.exit(1);

@@ -73,6 +73,12 @@ export interface StatsResult {
   churnByFile: Record<string, number>;
 }
 
+export interface CodeVizResult {
+  directoryTree: string;
+  churnChart: string;
+  dotGraph: string;
+}
+
 export interface Report {
   title: string;
   date: Date;
@@ -82,6 +88,7 @@ export interface Report {
   antipatterns: AntiPatternResult[];
   staticAnalysis: StaticAnalysisResult[];
   typos: TypoResult[];
+  codeViz: CodeVizResult;
 }
 
 export interface Options {

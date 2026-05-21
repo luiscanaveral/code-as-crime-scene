@@ -1,4 +1,4 @@
-import { Report, AntiPatternResult, StaticAnalysisResult, TypoResult, StatsResult } from '../types.js';
+import { Report, AntiPatternResult, StaticAnalysisResult, TypoResult, StatsResult, CodeVizResult } from '../types.js';
 
 export function generateMarkdownReport(report: Report): string {
   const lines: string[] = [];
@@ -16,6 +16,7 @@ export function generateMarkdownReport(report: Report): string {
   lines.push(...generateAntiPatternsSection(report.antipatterns));
   lines.push(...generateStaticAnalysisSection(report.staticAnalysis));
   lines.push(...generateTyposSection(report.typos));
+  lines.push(...generateCodeVizSection(report.codeViz));
 
   return lines.join('\n');
 }
@@ -169,6 +170,23 @@ function generateTyposSection(typos: TypoResult[]): string[] {
     lines.push(`_... and ${typos.length - 50} more typos._`);
     lines.push('');
   }
+
+  return lines;
+}
+
+function generateCodeVizSection(codeViz: CodeVizResult): string[] {
+  const lines: string[] = [];
+
+  lines.push('## 🗺️ Code Visualization');
+  lines.push('');
+  lines.push('### Directory Structure');
+  lines.push('');
+  lines.push(codeViz.directoryTree);
+  lines.push('');
+  lines.push('### File Churn');
+  lines.push('');
+  lines.push(codeViz.churnChart);
+  lines.push('');
 
   return lines;
 }

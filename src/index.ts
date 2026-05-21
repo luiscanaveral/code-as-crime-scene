@@ -4,18 +4,40 @@ import { detectAntiPatterns } from './antipatterns/index.js';
 import { runStaticAnalysis } from './static-analysis/analyzer.js';
 import { detectTypos } from './typos/detector.js';
 import { generateMarkdownReport } from './report/generator.js';
+import { loadGitignore } from './utils/ignore.js';
+import { generateCodeViz } from './codeviz/index.js';
 import { Options, Report } from './types.js';
 
 export async function analyze(options: Options = {}): Promise<Report> {
   const { commits, branch, repoUrl } = readGitLog(options);
   const repoPath = options.repoPath || process.cwd();
 
-  const stats = computeStats(commits, repoPath);
-  const antipatterns = detectAntiPatterns(commits);
-  const staticAnalysis = runStaticAnalysis(commits, repoPath);
-  const typos = detectTypos(commits, repoPath);
+  const isIgnored = loadGitignore(repoPath);
+  const filteredCommits = commits.map(commit => ({
+    ...commit,
+    files: commit.files.filter(f => !isIgnored(f.path)),
+  }));
+
+  const stats = computeStats(filteredCommits, repoPath);
+  const antipatterns = detectAntiPatterns(filteredCommits);
+  const staticAnalysis = runStaticAnalysis(filteredCommits, repoPath);
+  const typos = detectTypos(filteredCommits, repoPath);
 
   const repoName = repoUrl.split('/').pop()?.replace('.git', '') || 'code-as-crime-scene';
+
+  const allFiles = new Set<string>();
+  for (const commit of filteredCommits) {
+    for (const file of commit.files) {
+      allFiles.add(file.path);
+    }
+  }
+
+  const codeViz = generateCodeViz(
+    [...allFiles],
+    stats.churnByFile,
+    repoPath,
+    repoName,
+  );
 
   const report: Report = {
     title: `Code Crime Scene Report: ${repoName}`,
@@ -26,6 +48,7 @@ export async function analyze(options: Options = {}): Promise<Report> {
     antipatterns,
     staticAnalysis,
     typos,
+    codeViz,
   };
 
   return report;
@@ -42,4 +65,5 @@ export { detectAntiPatterns } from './antipatterns/index.js';
 export { runStaticAnalysis } from './static-analysis/analyzer.js';
 export { detectTypos } from './typos/detector.js';
 export { generateMarkdownReport } from './report/generator.js';
+export { generateCodeViz } from './codeviz/index.js';
 export * from './types.js';
