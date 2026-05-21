@@ -1,1 +1,0 @@
-{"version":3,"file":"divergent-change.d.ts","sourceRoot":"","sources":["../../src/antipatterns/divergent-change.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,MAAM,EAAE,MAAM,aAAa,CAAC;AACrC,OAAO,EAAE,iBAAiB,EAAE,MAAM,aAAa,CAAC;AAEhD,wBAAgB,qBAAqB,CAAC,OAAO,EAAE,MAAM,EAAE,GAAG,iBAAiB,CA+C1E"}

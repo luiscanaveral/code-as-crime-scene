@@ -1,1 +1,0 @@
-{"version":3,"file":"shotgun-surgery.d.ts","sourceRoot":"","sources":["../../src/antipatterns/shotgun-surgery.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,MAAM,EAAE,MAAM,aAAa,CAAC;AACrC,OAAO,EAAE,iBAAiB,EAAE,MAAM,aAAa,CAAC;AAEhD,wBAAgB,oBAAoB,CAAC,OAAO,EAAE,MAAM,EAAE,GAAG,iBAAiB,CAgDzE"}
