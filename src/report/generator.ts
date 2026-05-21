@@ -1,5 +1,32 @@
 import { Report, AntiPatternResult, StaticAnalysisResult, TypoResult, StatsResult, CodeVizResult } from '../types.js';
 
+const ANTIPATTERN_REQUIREMENTS: Record<string, string[]> = {
+  'fat-controller': ['.ts', '.js', '.py', '.java', '.cs', '.php', '.rb', '.kt', '.go', '.rs', '.c', '.cpp', '.h', '.hpp', '.cc'],
+  'supernova': [],
+  'god-class': ['.ts', '.js', '.py', '.java', '.cs', '.php', '.rb', '.kt', '.go', '.rs', '.c', '.cpp', '.h', '.hpp', '.cc'],
+  'shotgun-surgery': [],
+  'divergent-change': [],
+  'blob-architecture': [],
+  'anemic-domain-model': ['.ts', '.js', '.py', '.java', '.cs', '.php', '.rb', '.kt'],
+  'service-locator': ['.ts', '.js', '.py', '.java', '.cs', '.php', '.rb', '.kt', '.go', '.rs'],
+  'spaghetti-code': ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.php', '.rb', '.kt', '.go', '.rs', '.c', '.cpp', '.h', '.hpp'],
+  'lava-flow': ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.php', '.rb', '.kt', '.go', '.rs', '.c', '.cpp', '.h', '.hpp', '.css', '.scss', '.html'],
+  'golden-hammer': ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.php', '.rb', '.kt', '.go'],
+  'singleton-abuse': ['.ts', '.js', '.java', '.cs', '.php', '.rb', '.kt'],
+  'feature-envy': ['.ts', '.tsx', '.js', '.jsx', '.java', '.cs', '.php', '.rb', '.kt'],
+  'refused-bequest': ['.ts', '.tsx', '.js', '.jsx', '.java', '.cs', '.php', '.rb', '.kt'],
+  'parallel-inheritance': [],
+  'object-cesspool': ['.ts', '.tsx', '.js', '.jsx', '.java', '.cs', '.php', '.rb', '.kt'],
+  'massive-component': ['.tsx', '.jsx', '.vue', '.svelte'],
+  'prop-drilling': ['.tsx', '.jsx', '.vue', '.svelte'],
+  'global-state-abuse': ['.ts', '.tsx', '.js', '.jsx', '.vue', '.svelte'],
+  'callback-hell': ['.ts', '.tsx', '.js', '.jsx'],
+  'hardcoded-secrets': ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.rb', '.php', '.kt', '.go', '.rs', '.c', '.cpp', '.h', '.yaml', '.yml', '.json', '.toml', '.ini', '.cfg', '.conf', '.env', '.sh', '.bash', '.zsh'],
+  'broken-auth': ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.php', '.rb', '.kt', '.go'],
+  'trusting-client-input': ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.php', '.rb', '.kt', '.go'],
+  'cyclic-dependencies': ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts'],
+};
+
 export function generateMarkdownReport(report: Report): string {
   const lines: string[] = [];
 
@@ -13,7 +40,7 @@ export function generateMarkdownReport(report: Report): string {
   lines.push('');
 
   lines.push(...generateStatsSection(report.stats));
-  lines.push(...generateAntiPatternsSection(report.antipatterns));
+  lines.push(...generateAntiPatternsSection(report.antipatterns, report.fileExtensions));
   lines.push(...generateStaticAnalysisSection(report.staticAnalysis));
   lines.push(...generateTyposSection(report.typos));
   lines.push(...generateCodeVizSection(report.codeViz));
@@ -71,23 +98,53 @@ function generateStatsSection(stats: StatsResult): string[] {
   return lines;
 }
 
-function generateAntiPatternsSection(antipatterns: AntiPatternResult[]): string[] {
+function generateAntiPatternsSection(antipatterns: AntiPatternResult[], fileExtensions: string[]): string[] {
   const lines: string[] = [];
 
   lines.push('## 🔍 Anti-Pattern Analysis');
   lines.push('');
 
-  const hasFindings = antipatterns.some(ap => ap.files.length > 0 && ap.severity !== 'low');
+  const extSet = new Set(fileExtensions);
+  const statusRows: Array<{ name: string; status: string }> = [];
 
-  if (!hasFindings) {
-    lines.push('_No significant anti-patterns detected._');
-    lines.push('');
+  for (const ap of antipatterns) {
+    const name = formatAntiPatternName(ap.type);
+    const required = ANTIPATTERN_REQUIREMENTS[ap.type] || [];
+
+    let status: string;
+    if (ap.files.length > 0) {
+      status = '❌ Fail';
+    } else if (required.length > 0 && !required.some(r => extSet.has(r))) {
+      status = '⏭️ Ignored';
+    } else {
+      status = '✅ Pass';
+    }
+
+    statusRows.push({ name, status });
+  }
+
+  const grouped = new Map<string, { name: string; status: string }[]>();
+  for (const row of statusRows) {
+    const key = row.status;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(row);
+  }
+
+  lines.push('| Status | Pattern |');
+  lines.push('|--------|---------|');
+  for (const [status, items] of grouped) {
+    for (const item of items) {
+      lines.push(`| ${status} | ${item.name} |`);
+    }
+  }
+  lines.push('');
+
+  const failed = antipatterns.filter(ap => ap.files.length > 0);
+  if (failed.length === 0) {
     return lines;
   }
 
-  for (const ap of antipatterns) {
-    if (ap.files.length === 0) continue;
-
+  for (const ap of failed) {
     const severityBadge = getSeverityBadge(ap.severity);
     lines.push(`### ${severityBadge} ${formatAntiPatternName(ap.type)}`);
     lines.push('');
@@ -99,7 +156,7 @@ function generateAntiPatternsSection(antipatterns: AntiPatternResult[]): string[
       const detailsStr = file.details
         ? Object.entries(file.details)
             .map(([k, v]) => `${k}: ${v}`)
-            .join(', ')
+            .join('<br>')
         : '-';
       lines.push(`| \`${file.path}\` | ${detailsStr} |`);
     }
@@ -128,11 +185,20 @@ function generateStaticAnalysisSection(results: StaticAnalysisResult[]): string[
   for (const result of results.slice(0, 30)) {
     lines.push(`### \`${result.file}\` (${result.language})`);
     lines.push('');
+    if (result.issues.length > 10) {
+      lines.push(`<details>`);
+      lines.push(`<summary>${result.issues.length} issues — click to expand</summary>`);
+      lines.push('');
+    }
     lines.push('| Line | Type | Severity | Message |');
     lines.push('|------|------|----------|---------|');
     for (const issue of result.issues) {
       const badge = getSeverityBadge(issue.severity);
       lines.push(`| ${issue.line} | \`${issue.type}\` | ${badge} | ${issue.message} |`);
+    }
+    if (result.issues.length > 10) {
+      lines.push('');
+      lines.push(`</details>`);
     }
     lines.push('');
   }

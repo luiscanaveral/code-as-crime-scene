@@ -89,6 +89,7 @@ export interface Report {
   staticAnalysis: StaticAnalysisResult[];
   typos: TypoResult[];
   codeViz: CodeVizResult;
+  fileExtensions: string[];
 }
 
 export interface Options {

@@ -8,27 +8,35 @@ import { loadGitignore } from './utils/ignore.js';
 import { generateCodeViz } from './codeviz/index.js';
 import { Options, Report } from './types.js';
 
+const EXCLUDED_DIRS = ['node_modules', 'dist', '.git', '.next', 'build', '.venv', 'venv', '__pycache__', '.tox'];
+
 export async function analyze(options: Options = {}): Promise<Report> {
   const { commits, branch, repoUrl } = readGitLog(options);
   const repoPath = options.repoPath || process.cwd();
 
   const isIgnored = loadGitignore(repoPath);
+  const isExcludedDir = (path: string) =>
+    EXCLUDED_DIRS.some(dir => path.startsWith(`${dir}/`) || path.includes(`/${dir}/`));
+
   const filteredCommits = commits.map(commit => ({
     ...commit,
-    files: commit.files.filter(f => !isIgnored(f.path)),
+    files: commit.files.filter(f => !isIgnored(f.path) && !isExcludedDir(f.path)),
   }));
 
   const stats = computeStats(filteredCommits, repoPath);
-  const antipatterns = detectAntiPatterns(filteredCommits);
+  const antipatterns = detectAntiPatterns(filteredCommits, repoPath);
   const staticAnalysis = runStaticAnalysis(filteredCommits, repoPath);
   const typos = detectTypos(filteredCommits, repoPath);
 
   const repoName = repoUrl.split('/').pop()?.replace('.git', '') || 'code-as-crime-scene';
 
   const allFiles = new Set<string>();
+  const fileExtensions = new Set<string>();
   for (const commit of filteredCommits) {
     for (const file of commit.files) {
       allFiles.add(file.path);
+      const ext = file.path.split('.').pop()?.toLowerCase();
+      if (ext) fileExtensions.add('.' + ext);
     }
   }
 
@@ -49,6 +57,7 @@ export async function analyze(options: Options = {}): Promise<Report> {
     staticAnalysis,
     typos,
     codeViz,
+    fileExtensions: [...fileExtensions],
   };
 
   return report;

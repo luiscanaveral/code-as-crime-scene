@@ -13,7 +13,7 @@ program
 
 program
   .option('-p, --path <path>', 'Path to the git repository', process.cwd())
-  .option('-o, --output <path>', 'Output file for the report', 'code-crime-scene-report.md')
+  .option('-o, --output <path>', 'Output file for the report (default: code-crime-scene-report-<timestamp>.md)')
   .option('-n, --max-commits <number>', 'Maximum number of commits to analyze', parseInt)
   .option('-s, --since <date>', 'Analyze commits since date (e.g. "2024-01-01")')
   .option('-u, --until <date>', 'Analyze commits until date')
@@ -40,7 +40,8 @@ program
 
       const markdown = generateMarkdownReport(report);
 
-      const outputPath = resolve(options.output);
+      const outputName = options.output || `code-crime-scene-report-${Date.now()}.md`;
+      const outputPath = resolve(outputName);
       writeFileSync(outputPath, markdown, 'utf-8');
       console.log(`Report generated: ${outputPath}`);
 
