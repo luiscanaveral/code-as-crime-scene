@@ -3,6 +3,8 @@ interface TreeNode {
   children: Map<string, TreeNode>;
 }
 
+const MAX_NODES = 80;
+
 export function generateDirectoryTree(files: string[], repoName: string): string {
   const root = new Map<string, TreeNode>();
 
@@ -18,26 +20,18 @@ export function generateDirectoryTree(files: string[], repoName: string): string
     }
   }
 
+  const totalNodes = countNodes(root);
+
   const lines: string[] = [];
   lines.push('```mermaid');
-  lines.push('graph TD');
-  lines.push('');
+  lines.push('mindmap');
 
-  let nextId = 1;
-  const nodeIds = new Map<string, number>();
+  lines.push(`  ${sanitize(repoName)}`);
 
-  function getOrCreateId(path: string): number {
-    if (!nodeIds.has(path)) {
-      nodeIds.set(path, nextId++);
-    }
-    return nodeIds.get(path)!;
-  }
+  let nodeCount = 0;
+  let clipped = false;
 
-  const rootPath = repoName;
-  const rootId = getOrCreateId(rootPath);
-  lines.push(`  n${rootId}["${sanitize(repoName)}"]`);
-
-  function renderTree(children: Map<string, TreeNode>, parentId: number, prefix: string) {
+  function renderTree(children: Map<string, TreeNode>, indent: string) {
     const sorted = [...children.entries()].sort(([a], [b]) => {
       const aIsFile = children.get(a)!.children.size === 0;
       const bIsFile = children.get(b)!.children.size === 0;
@@ -47,21 +41,41 @@ export function generateDirectoryTree(files: string[], repoName: string): string
     });
 
     for (const [name, node] of sorted) {
-      const nodePath = prefix ? `${prefix}/${name}` : name;
-      const nodeId = getOrCreateId(nodePath);
+      if (nodeCount >= MAX_NODES) { clipped = true; break; }
+
       const displayName = sanitize(name);
-      lines.push(`  n${nodeId}["${displayName}"]`);
-      lines.push(`  n${parentId} --> n${nodeId}`);
-      if (node.children.size > 0) {
-        renderTree(node.children, nodeId, nodePath);
+      if (node.children.size === 0) {
+        lines.push(`${indent}  ${displayName}`);
+        nodeCount++;
+      } else {
+        lines.push(`${indent}  ${displayName}`);
+        nodeCount++;
+        renderTree(node.children, indent + '  ');
       }
     }
   }
 
-  renderTree(root, rootId, '');
+  renderTree(root, '  ');
+
+  if (clipped) {
+    lines.push('  ... (diagram truncated — too many files to render)');
+  } else if (totalNodes === 0) {
+    lines.push('  (no files)');
+  }
 
   lines.push('```');
   return lines.join('\n');
+}
+
+function countNodes(children: Map<string, TreeNode>): number {
+  let count = 0;
+  for (const [, node] of children) {
+    count++;
+    if (node.children.size > 0) {
+      count += countNodes(node.children);
+    }
+  }
+  return count;
 }
 
 function sanitize(text: string): string {
